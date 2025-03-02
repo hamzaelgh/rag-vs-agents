@@ -1,0 +1,27 @@
+# Byte-compiled / cache files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.idea/
+.vscode/
+.DS_Store
+
+# Virtual environment
+*.venv
+*.virtualenv
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Log files
+logs/
+*.log
+
+# MacOS system files
+.DS_Store
