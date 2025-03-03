@@ -23,5 +23,5 @@ pip-delete-this-directory.txt
 logs/
 *.log
 
-# MacOS system files
-.DS_Store
+# Ignore .env file to keep secrets safe
+.env

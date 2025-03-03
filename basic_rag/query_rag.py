@@ -2,8 +2,13 @@ from qdrant_client import QdrantClient
 import ollama
 import re
 import numpy as np
-
+import requests
+import os
 import nltk
+from rank_bm25 import BM25Okapi
+from nltk.tokenize import word_tokenize
+import string
+
 nltk.download("punkt")
 
 # Initialize Qdrant client
@@ -12,40 +17,79 @@ client = QdrantClient("localhost", port=6333)
 # Correct embedding sizes for each model
 EMBEDDING_SIZES = {
     "english": 4096,
-    "arabic": 2304,
+    "arabic": 4096,  
 }
 
-# Function to detect language
+# Load API details from environment variables
+AZURE_LANGUAGE_API_URL = "http://localhost:5000/text/analytics/v3.1/languages"
+AZURE_NER_API_URL = "http://localhost:5001/text/analytics/v3.1/entities/recognition/general"
+
+# Function to detect language using Azure AI Language API   
 def detect_language(text):
-    arabic_chars = re.compile(r'[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF]')
-    return "arabic" if arabic_chars.search(text) else "english"
+    """Calls Azure AI Language API to detect the language of the text."""
+    payload = {"documents": [{"id": "1", "text": text}]}
+    headers = {"Content-Type": "application/json"}
+
+    response = requests.post(AZURE_LANGUAGE_API_URL, json=payload, headers=headers)
+    response_json = response.json()
+
+    if "documents" in response_json and response_json["documents"]:
+        detected_lang = response_json["documents"][0]["detectedLanguage"]["iso6391Name"]  # 'ar' or 'en'
+        
+        # Map 'ar' to 'arabic' and 'en' to 'english'
+        return "arabic" if detected_lang == "ar" else "english"
+    
+    return "english"  # Default to English if detection fails
+
+# Function to extract entities using Azure AI NER API
+def extract_named_entities(text):
+    """Calls Azure AI NER API to extract named entities from the query."""
+    payload = {"documents": [{"id": "1", "text": text}]}
+    headers = {"Content-Type": "application/json"}
+
+    response = requests.post(AZURE_NER_API_URL, json=payload, headers=headers)
+    response_json = response.json()
+
+    entities = []
+    if "documents" in response_json and response_json["documents"]:
+        for entity in response_json["documents"][0]["entities"]:
+            entities.append(entity["text"])  # Extract entity names
+    
+    return entities
 
 # Function to generate embeddings
-def generate_embedding(text, lang):
-    model = "gemma2:2b" if lang == "arabic" else "mistral:7b"
+def generate_embedding(text, language):
+    """Generates embedding using the correct model based on detected language."""
+    model = "command-r7b-arabic:7b" if language == "arabic" else "mistral:7b"
     response = ollama.embeddings(model=model, prompt=text)
     return response["embedding"]
-
-from rank_bm25 import BM25Okapi
-import nltk
-from nltk.tokenize import word_tokenize
-import string
-
-# Ensure NLTK tokenizer is available
-nltk.download("punkt")
 
 # Function to tokenize text for BM25
 def tokenize(text):
     return [word.lower() for word in word_tokenize(text) if word not in string.punctuation]
 
-# Function to retrieve documents using hybrid search (BM25 + Vector Search + Keyword Matches)
+# Function to search documents using vector search, keyword matching, and NER-based lookup
+# Enhance search accuracy by combining vector search, BM25, and entity matching.
 def search_documents(query, language):
+    """Retrieves documents using vector search, keyword matching, and NER-based lookup."""
     query_vector = generate_embedding(query, language)
+    collection_name = "rag_docs_ar" if language == "arabic" else "rag_docs_en"
+
+    # Ensure Qdrant collection exists
+    if not client.collection_exists(collection_name):
+        print(f"🚨 Collection '{collection_name}' not found in Qdrant. Skipping retrieval.")
+        return []
+
+    # Extract named entities from query
+    named_entities = extract_named_entities(query)
+    print(f"🟢 Named Entities: {named_entities}")
+
+    retrieved_docs, keyword_docs = [], []
 
     # Perform vector search in Qdrant
     try:
         vector_results = client.search(
-            collection_name=f"rag_docs_{language}",
+            collection_name=collection_name,
             query_vector=query_vector,
             limit=5,
             with_payload=True
@@ -53,55 +97,25 @@ def search_documents(query, language):
         retrieved_docs = [{"text": hit.payload["text"], "score": hit.score} for hit in vector_results] if vector_results else []
     except Exception as e:
         print(f"Vector search error: {e}")
-        retrieved_docs = []
 
-    # Perform keyword search (global lookup) with corrected filtering format
+    # Perform keyword search including NER-based entity matching
     try:
         keyword_results, _ = client.scroll(
-            collection_name=f"rag_docs_{language}",
-            scroll_filter={"must": [{"key": "text", "match": {"text": query}}]},
+            collection_name=collection_name,
+            scroll_filter={"must": [{"key": "text", "match": {"value": query}}] + 
+                           [{"key": "text", "match": {"value": entity}} for entity in named_entities]},
             limit=5,
             with_payload=True
         )
         keyword_docs = [{"text": hit.payload["text"], "score": 2.0} for hit in keyword_results]
     except Exception as e:
         print(f"Keyword search error: {e}")
-        keyword_docs = []
 
-    # Tokenize documents for BM25 scoring
-    corpus = [doc["text"] for doc in keyword_docs + retrieved_docs]
-    tokenized_corpus = [tokenize(doc) for doc in corpus]
+    # Combine and rank results
+    final_results = keyword_docs + retrieved_docs
+    final_results = sorted(final_results, key=lambda x: x["score"], reverse=True)
 
-    # Initialize BM25 scorer
-    bm25 = BM25Okapi(tokenized_corpus)
-
-    # Compute BM25 scores for the query
-    query_tokens = tokenize(query)
-    bm25_scores = bm25.get_scores(query_tokens)
-
-    # Normalize vector scores and BM25 scores
-    max_vector_score = max([doc["score"] for doc in retrieved_docs], default=1)
-    max_bm25_score = max(bm25_scores, default=1)
-
-    for i, doc in enumerate(keyword_docs + retrieved_docs):
-        bm25_score = bm25_scores[i] / max_bm25_score if max_bm25_score else 0
-        vector_score = doc["score"] / max_vector_score if max_vector_score else 0
-
-        # Weighted scoring (adjust weights as needed)
-        doc["score"] = (0.5 * vector_score) + (0.3 * bm25_score) + (0.2 * 2.0)
-
-    # Merge & sort results by final score
-    final_results = sorted(keyword_docs + retrieved_docs, key=lambda x: x["score"], reverse=True)
-
-    # Remove duplicates while preserving order
-    unique_docs = []
-    seen_texts = set()
-    for doc in final_results:
-        if doc["text"] not in seen_texts:
-            unique_docs.append(doc)
-            seen_texts.add(doc["text"])
-
-    return unique_docs[:5]  # Return top 5 ranked documents
+    return final_results[:5]  # Return top 5 results
 
 # Function to re-rank retrieved documents
 def rerank_documents(query, retrieved_docs):
@@ -134,7 +148,7 @@ def rerank_documents(query, retrieved_docs):
 # Function to generate an LLM response
 def generate_response(query):
     language = detect_language(query)
-    llm_model = "gemma2:2b" if language == "arabic" else "mistral:7b"
+    llm_model = "command-r7b-arabic:7b" if language == "arabic" else "mistral:7b"
 
     retrieved_docs = search_documents(query, language)
     reranked_docs = rerank_documents(query, retrieved_docs)

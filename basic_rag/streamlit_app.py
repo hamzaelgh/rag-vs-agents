@@ -26,7 +26,7 @@ def detect_language(text):
 
 # Function to generate embeddings
 def generate_embedding(text, lang):
-    model = "gemma2:2b" if lang == "arabic" else "mistral:7b"
+    model = "command-r7b-arabic:7b" if lang == "arabic" else "mistral:7b"
     response = ollama.embeddings(model=model, prompt=text)
     return response["embedding"]
 
@@ -62,7 +62,7 @@ def search_documents(query, language):
 # Function to generate an LLM response
 def generate_response(query):
     language = detect_language(query)
-    llm_model = "gemma2:2b" if language == "arabic" else "mistral:7b"
+    llm_model = "command-r7b-arabic:7b" if language == "arabic" else "mistral:7b"
 
     retrieved_docs = search_documents(query, language)
     context = "\n".join([doc["text"] for doc in retrieved_docs])

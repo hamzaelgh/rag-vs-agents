@@ -1,32 +1,34 @@
-# 🧠 AI-Powered RAG System: With & Without AI Agents 🚀  
+# 🧠 AI-Powered RAG System: Deployable Offline, On-Premise, or Any Cloud 🚀  
 
-This repository demonstrates how to build a **Retrieval-Augmented Generation (RAG) system** using **Ollama, Qdrant, BM25, and embeddings**.  
-We first build a **standalone RAG pipeline** and then **extend it with AI agents** using **AutoGen and Semantic Kernel**.
+This repository demonstrates how to build a **Retrieval-Augmented Generation (RAG) system** that can be **fully deployed offline, on-premise, or on any cloud** without relying on managed cloud services.  
+
+The system integrates **Ollama, Qdrant, BM25, and embeddings**, with **multilingual support (Arabic & English)** and **fine-tuned retrieval enhancements** to improve accuracy and ranking.
 
 ---
 
-## 📌 **Part 1: Building the Basic RAG System**
-
-### 📝 **Features**
+## 📌 **Features & Capabilities**
 ✅ **Hybrid Retrieval:** Combines **vector search (embeddings)** with **BM25 keyword matching**  
-✅ **Multi-Language Support:** **Arabic & English queries**, using **Gemma-2B for Arabic** & **Mistral-7B for English**  
-✅ **Fine-Tuned Ranking:** Uses **BM25 + embedding similarity** to improve search relevance  
+✅ **Multi-Language Support:** **Arabic & English queries**, using **Command R7B Arabic for Arabic** & **Mistral-7B for English**  
+✅ **Fine-Tuned Ranking:** Uses **BM25 + embedding similarity + reranking (bge-m3)** to enhance search relevance  
 ✅ **Streamlit UI:** Interactive web interface for testing queries  
-✅ **Local Deployment:** Runs fully **offline** using **Qdrant (Docker) and Ollama**  
+✅ **Language Detection:** Uses **Azure AI Container (offline)** to detect Arabic vs. English queries  
+✅ **Named Entity Recognition (NER):** Improves keyword matching using **Azure AI NER Container (offline)**  
+✅ **Local Deployment:** Runs **fully offline** using **Qdrant (Docker) and Ollama**  
 
 ---
 
-### 🔄 **User Flow & Tool Breakdown**
+## 🔄 **User Flow & Tool Breakdown**
 
-| **Step**                     | **Tool Used**            | **Description** |
-|------------------------------|-------------------------|----------------|
-| **1. User enters a query**    | Streamlit UI            | Provides an input field for users to enter queries. |
-| **2. Detect query language**  | Python (Regex)          | Determines whether the query is in Arabic or English. |
-| **3. Generate query embedding** | Ollama (Mistral/Gemma) | Converts the query into a numerical vector representation. |
-| **4. Retrieve relevant documents** | Qdrant (Vector DB)  | Performs a **hybrid search**: **vector similarity search** (embeddings) + **BM25 keyword match**. |
-| **5. Rank retrieved documents** | BM25 (Rank-BM25)       | Ranks results based on keyword relevance and vector similarity. |
-| **6. Generate AI response**   | Ollama (Mistral/Gemma)  | Uses LLM to generate an answer using the top-ranked documents as context. |
-| **7. Display response**       | Streamlit UI            | Shows retrieved documents, scores, and final AI response. |
+| **Step**                     | **Tool Used**                 | **Description** |
+|------------------------------|------------------------------|----------------|
+| **1. User enters a query**    | Streamlit UI                 | Provides an input field for users to enter queries. |
+| **2. Detect query language**  | Azure AI Language (Offline)  | Determines whether the query is in Arabic or English. |
+| **3. Generate query embedding** | Ollama (Mistral/Command R7B Arabic) | Converts the query into a numerical vector representation. |
+| **4. Perform Named Entity Recognition (NER)** | Azure AI NER (Offline) | Extracts key entities to enhance keyword matching. |
+| **5. Retrieve relevant documents** | Qdrant (Vector DB)       | Performs a **hybrid search**: **vector similarity search** (embeddings) + **BM25 keyword match**. |
+| **6. Rank retrieved documents** | BM25 (Rank-BM25) + bge-m3  | Ranks results based on keyword relevance and vector similarity. |
+| **7. Generate AI response**   | Ollama (Mistral/Command R7B Arabic) | Uses LLM to generate an answer using the top-ranked documents as context. |
+| **8. Display response**       | Streamlit UI                 | Shows retrieved documents, scores, and final AI response. |
 
 ---
 
@@ -34,15 +36,15 @@ We first build a **standalone RAG pipeline** and then **extend it with AI agents
 
 ### **1️⃣ Clone the Repository**
 ```bash
-git clone https://github.com/your-repo/rag-vs-agents.git
-cd rag-vs-agents
+git clone https://github.com/your-repo/rag-deployable.git
+cd rag-deployable
 ```
 
 ### **2️⃣ Set Up Python Virtual Environment**
 ```bash
 python3 -m venv venv
 source venv/bin/activate  # macOS/Linux
-venv\Scripts\activate     # Windows
+venv\Scripts\activate   # Windows
 ```
 
 ### **3️⃣ Install Dependencies**
@@ -60,81 +62,81 @@ docker run -p 6333:6333 -p 6334:6334 qdrant/qdrant
 Follow Ollama installation from [Ollama's official website](https://ollama.com). Then, pull the required models:
 ```bash
 ollama pull mistral:7b
-ollama pull gemma2:2b
+ollama pull command-r7b-arabic:7b
 ollama pull bge-m3
 ```
 
-### **6️⃣ Prepare & Index Documents**
+### **6️⃣ Run Azure AI Containers for Language Detection & NER**
+#### **Language Detection**
+```bash
+docker run --rm -it -p 5000:5000 --memory 4g --cpus 1   mcr.microsoft.com/azure-cognitive-services/textanalytics/language   Eula=accept   Billing={ENDPOINT_URI}   ApiKey={API_KEY}
+```
+
+#### **Named Entity Recognition (NER)**
+```bash
+docker run --rm -it -p 5001:5000 --memory 8g --cpus 1   mcr.microsoft.com/azure-cognitive-services/textanalytics/ner   Eula=accept   Billing={ENDPOINT_URI}   ApiKey={API_KEY}
+```
+
+### **7️⃣ Prepare & Index Documents**
 Store your dataset inside the `data/` folder, then run:
 ```bash
 python basic_rag/index_documents.py
 ```
 This will:
 - Detect language (Arabic/English)
-- Embed documents using **Mistral-7B (4096-dim) or Gemma-2B (2304-dim)**
+- Perform Named Entity Recognition (NER)
+- Embed documents using **Mistral-7B (4096-dim) or Command R7B Arabic (4096-dim)**
 - Store them in Qdrant for retrieval
 
-### **7️⃣ Start the Streamlit UI**
+### **8️⃣ Start the Streamlit UI**
 ```bash
 streamlit run basic_rag/streamlit_app.py
 ```
 
-### **8️⃣ Test Queries**
+### **9️⃣ Test Queries**
 Open your browser at `http://localhost:8501` and enter any query.  
 Examples:  
 - **English:** `"What is artificial intelligence?"`  
 - **Arabic:** `"ما هو الذكاء الاصطناعي؟"`
 
 The system will:
-1. **Auto-detect query language**
-2. **Retrieve relevant documents from Qdrant**
-3. **Rank results using BM25 + embedding similarity**
-4. **Generate an AI response using Ollama (Mistral/Gemma)**
+1. **Detect query language using Azure AI**
+2. **Perform Named Entity Recognition (NER)**
+3. **Retrieve relevant documents from Qdrant**
+4. **Rank results using BM25 + embedding similarity + reranking**
+5. **Generate an AI response using Ollama (Mistral/Command R7B Arabic)**
 
 ---
 
-## 📌 **Part 2: Enhancing RAG with AI Agents (AutoGen & Semantic Kernel)**
+## 📌 **Addressing Arabic Language Challenges**
+### **1️⃣ Challenge: Arabic Ranker Models**
+📌 **Problem:** Many ranker models struggle to reconstruct answers when the supporting information is scattered across multiple chunks.  
+✅ **Solution:** We integrate **BM25 + bge-m3 reranker**, which improves the ranking of relevant Arabic documents based on **semantic similarity and keyword matching**.
 
-### 🤖 Why Add AI Agents & Semantic Kernel?
-While a **classic RAG system** retrieves and ranks documents, it **lacks reasoning, adaptability, and action-taking capabilities**. By integrating **AutoGen (AI Agents)** and **Semantic Kernel (SK)**, we can transform our system from a **passive retriever** into a **dynamic AI-powered assistant** that understands, optimizes, and interacts intelligently.
+### **2️⃣ Challenge: Arabic Embedding Models**
+📌 **Problem:** Single-word Arabic queries sometimes fail to retrieve results, even when relevant content exists in the knowledge base.  
+✅ **Solution:** We use a **hybrid search approach**, combining:
+   - **Vector search (Ollama embeddings)**
+   - **BM25 keyword matching**
+   - **Reranking using bge-m3**
+   This ensures better retrieval even for **short Arabic queries**.
 
-### 🔹 Key Benefits of AI Agents & SK:
-- **Agents collaborate** to **refine queries, optimize retrieval, and validate responses**.
-- **Human-in-the-loop validation** ensures AI-generated responses remain accurate.
-- **Agents can trigger external actions**, like fetching real-time data or executing workflows.
-- **Semantic Kernel enhances memory & reasoning**, making the system **context-aware**.
+### **Mitigating those Issues** 
+✅ Our current implementation mitigates these issues with:
+	•	Hybrid Search (BM25 + Vectors)
+	•	Re-ranking (bge-m3)
+	•	Named Entity Recognition (NER)
+	•	LLM Context Expansion
+---
 
-### 🚀 Classic RAG vs. RAG with AI Agents & SK
-
-| **Feature**             | **Classic RAG**            | **With AutoGen & SK**                 |
-|-------------------------|---------------------------|---------------------------------------|
-| **Query Understanding** | Basic retrieval           | Agents **reformulate & enhance** queries |
-| **Search Optimization** | BM25 + vector search      | Agents **adapt retrieval dynamically** |
-| **Answer Accuracy**     | LLM generates response    | **Verification Agent** checks facts  |
-| **User Validation**     | No feedback loop         | **Human-in-the-loop** validation      |
-| **Task Automation**     | Passive retrieval        | Agents **execute actions & call APIs** |
-| **Memory & Context**    | No persistence           | **SK enables memory & reasoning**     |
-
-By adding **AutoGen** and **Semantic Kernel**, we **bridge the gap** between **information retrieval and intelligent decision-making**—allowing our AI system to not just **retrieve data** but also **reason, verify, and act**.
+## 🚀 **Future Improvements**
+🟢 **Experiment with specialized Arabic embedding models** (e.g., Arabic-trained versions of BGE or MARBERT).  
+🟢 **Optimize BM25 weights for Arabic vs. English separately** to fine-tune ranking balance.  
+🟢 **Extend Named Entity Recognition (NER) to improve keyword-based lookup**.  
+🟢 **Benchmark different Arabic language models for better retrieval performance**.  
 
 ---
 
-## 🛠️ **Planned Step-by-Step Implementation**
-### **1️⃣ Install AutoGen & Semantic Kernel**
-```bash
-pip install pyautogen semantic-kernel
-```
+This system is designed to be **fully deployable offline, on-premise, or in any cloud** with **optimized Arabic & English retrieval**. 🚀  
 
-### **2️⃣ Define AI Agents**
-We will create:
-- **Retrieval Agent:** Queries Qdrant, applies ranking & re-ranking  
-- **Summarization Agent:** Synthesizes results into a user-friendly response  
-- **Validation Agent:** Checks output quality (optional human-in-the-loop)  
-
-### **3️⃣ Modify Retrieval Logic**
-Instead of running retrieval inside `query_rag.py`, we will use **AutoGen agents** to **decide the best retrieval method** dynamically.
-
-### **4️⃣ Update Streamlit UI**
-We will add:
-- **Conversational agents:** Enabling a back-and-forth conversation  
-- **User feedback mechanism:** Allowing users to upvote/downvote responses  
+Enjoy building your **production-ready RAG system**! 🏗️🔥  
