@@ -16,6 +16,20 @@ We first build a **standalone RAG pipeline** and then **extend it with AI agents
 
 ---
 
+### 🔄 **User Flow & Tool Breakdown**
+
+| **Step**                     | **Tool Used**            | **Description** |
+|------------------------------|-------------------------|----------------|
+| **1. User enters a query**    | Streamlit UI            | Provides an input field for users to enter queries. |
+| **2. Detect query language**  | Python (Regex)          | Determines whether the query is in Arabic or English. |
+| **3. Generate query embedding** | Ollama (Mistral/Gemma) | Converts the query into a numerical vector representation. |
+| **4. Retrieve relevant documents** | Qdrant (Vector DB)  | Performs a **hybrid search**: **vector similarity search** (embeddings) + **BM25 keyword match**. |
+| **5. Rank retrieved documents** | BM25 (Rank-BM25)       | Ranks results based on keyword relevance and vector similarity. |
+| **6. Generate AI response**   | Ollama (Mistral/Gemma)  | Uses LLM to generate an answer using the top-ranked documents as context. |
+| **7. Display response**       | Streamlit UI            | Shows retrieved documents, scores, and final AI response. |
+
+---
+
 ## 🛠️ **Setup & Installation**  
 
 ### **1️⃣ Clone the Repository**
@@ -109,14 +123,3 @@ Instead of running retrieval inside `query_rag.py`, we will use **AutoGen agents
 We will add:
 - **Conversational agents:** Enabling a back-and-forth conversation  
 - **User feedback mechanism:** Allowing users to upvote/downvote responses  
-
----
-
-## 📌 **Summary of What We Built**
-✅ **Basic RAG (Hybrid Retrieval: BM25 + Embeddings)**  
-✅ **Multi-language support (Arabic/English) with automatic LLM selection**  
-✅ **Fine-tuned ranking (vector search + BM25 weighting)**  
-✅ **Interactive UI with Streamlit**  
-✅ **Runs fully locally (Ollama, Qdrant, Python)**  
-
-
