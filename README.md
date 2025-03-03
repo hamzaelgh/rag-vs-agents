@@ -121,8 +121,9 @@ The system will:
    - **Reranking using bge-m3**
    This ensures better retrieval even for **short Arabic queries**.
 
-### **3️⃣Mitigating those Issues** 
-✅ Our current implementation mitigates these issues with:
+### **3️⃣ Mitigating those Issues** 
+📌 **Solution:**
+✅ **Our current implementation mitigates these issues with:**
 	•	Hybrid Search (BM25 + Vectors)
 	•	Re-ranking (bge-m3)
 	•	Named Entity Recognition (NER)
