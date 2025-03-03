@@ -123,10 +123,10 @@ The system will:
 
 ### **3️⃣ Mitigating those Issues** 
 Our current implementation mitigates these issues with:
-	- Hybrid Search (BM25 + Vectors)
-	- Re-ranking (bge-m3)
-	- Named Entity Recognition (NER)
-	- LLM Context Expansion
+- Hybrid Search (BM25 + Vectors)
+- Re-ranking (bge-m3)
+- Named Entity Recognition (NER)
+- LLM Context Expansion
 ---
 
 ## 🚀 **Future Improvements**
