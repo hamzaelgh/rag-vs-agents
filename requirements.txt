@@ -3,3 +3,5 @@ qdrant-client
 faiss-cpu  # Optional for local vector search
 semantic-kernel
 streamlit  # Optional for a simple UI
+rank-bm25
+nltk
