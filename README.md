@@ -95,12 +95,27 @@ The system will:
 
 ## 📌 **Part 2: Enhancing RAG with AI Agents (AutoGen & Semantic Kernel)**
 
-### 📝 **Planned Enhancements**
-✅ **Agent Collaboration:** Integrating multiple AI agents to handle retrieval, ranking, summarization, and user interaction  
-✅ **AutoGen Framework:** Adding **AutoGen** to create an orchestrated multi-agent workflow  
-✅ **Semantic Kernel (SK):** Using **SK planners** for more dynamic retrieval and query handling  
-✅ **Human-in-the-Loop Validation:** Allowing users to correct AI responses before finalizing  
-✅ **Action Execution:** Enabling AI agents to fetch external knowledge if required  
+### 🤖 Why Add AI Agents & Semantic Kernel?
+While a **classic RAG system** retrieves and ranks documents, it **lacks reasoning, adaptability, and action-taking capabilities**. By integrating **AutoGen (AI Agents)** and **Semantic Kernel (SK)**, we can transform our system from a **passive retriever** into a **dynamic AI-powered assistant** that understands, optimizes, and interacts intelligently.
+
+### 🔹 Key Benefits of AI Agents & SK:
+- **Agents collaborate** to **refine queries, optimize retrieval, and validate responses**.
+- **Human-in-the-loop validation** ensures AI-generated responses remain accurate.
+- **Agents can trigger external actions**, like fetching real-time data or executing workflows.
+- **Semantic Kernel enhances memory & reasoning**, making the system **context-aware**.
+
+### 🚀 Classic RAG vs. RAG with AI Agents & SK
+
+| **Feature**             | **Classic RAG**            | **With AutoGen & SK**                 |
+|-------------------------|---------------------------|---------------------------------------|
+| **Query Understanding** | Basic retrieval           | Agents **reformulate & enhance** queries |
+| **Search Optimization** | BM25 + vector search      | Agents **adapt retrieval dynamically** |
+| **Answer Accuracy**     | LLM generates response    | **Verification Agent** checks facts  |
+| **User Validation**     | No feedback loop         | **Human-in-the-loop** validation      |
+| **Task Automation**     | Passive retrieval        | Agents **execute actions & call APIs** |
+| **Memory & Context**    | No persistence           | **SK enables memory & reasoning**     |
+
+By adding **AutoGen** and **Semantic Kernel**, we **bridge the gap** between **information retrieval and intelligent decision-making**—allowing our AI system to not just **retrieve data** but also **reason, verify, and act**.
 
 ---
 
