@@ -1,10 +1,10 @@
 # 🧠 AI-Powered RAG System: Deployable Offline, On-Premise, or Any Cloud 🚀  
 
-This repository demonstrates how to build a **Retrieval-Augmented Generation (RAG) system** that can be **fully deployed offline, on-premise, or on any cloud** without relying on managed cloud services.  
+This repository demonstrates how to build a **Retrieval-Augmented Generation (RAG) system** that is **cloud-agnostic, fully deployable offline, on-premise, or on any cloud** without relying on managed cloud services.  
 
-The system integrates **Ollama, Qdrant, BM25, and embeddings**, with **multilingual support (Arabic & English)** and **fine-tuned retrieval enhancements** to improve accuracy and ranking.
+The system integrates **Ollama, Qdrant, BM25, and embeddings**, with **multilingual support (Arabic & English)** and **fine-tuned retrieval enhancements** to improve accuracy and ranking.  
 
----
+Additionally, **Azure AI Services** (via offline containers) enhance the system’s **language detection, document processing, content safety, and retrieval ranking**, making it robust and enterprise-ready.  
 
 ---
 
@@ -14,8 +14,8 @@ The system integrates **Ollama, Qdrant, BM25, and embeddings**, with **multiling
 ✅ **Fine-Tuned Ranking:** Uses **BM25 + embedding similarity + reranking (bge-m3)** to enhance search relevance  
 ✅ **Streamlit UI:** Interactive web interface for testing queries  
 ✅ **Language Detection:** Uses **Azure AI Container (offline)** to detect Arabic vs. English queries  
-✅ **Content Safety Filtering:** Uses **Azure AI Content Safety** to detect and filter harmful, biased, or inappropriate content  
-✅ **Document Processing Support:** Uses **Azure Document Intelligence (Form Recognizer)** to extract text from PDFs, scanned documents, and structured forms  
+✅ **Document Intelligence:** Uses **Azure AI Document Intelligence (offline)** for document preprocessing & OCR  
+✅ **Content Moderation:** Uses **Azure AI Content Safety (offline)** to filter inappropriate content  
 ✅ **Local Deployment:** Runs **fully offline** using **Qdrant (Docker) and Ollama**  
 
 ---
@@ -29,10 +29,9 @@ The system integrates **Ollama, Qdrant, BM25, and embeddings**, with **multiling
 | **3. Generate query embedding** | Ollama (Mistral/Command R7B Arabic) | Converts the query into a numerical vector representation. |
 | **4. Retrieve relevant documents** | Qdrant (Vector DB)       | Performs a **hybrid search**: **vector similarity search** (embeddings) + **BM25 keyword match**. |
 | **5. Rank retrieved documents** | BM25 (Rank-BM25) + bge-m3  | Ranks results based on keyword relevance and vector similarity. |
-| **6. Filter responses for safety** | Azure AI Content Safety  | Ensures retrieved content & AI responses do not contain harmful or biased content. |
-| **7. Process PDF & image documents** | Azure Document Intelligence | Extracts structured text for retrieval from PDFs, invoices, forms, and scanned documents. |
-| **8. Generate AI response**   | Ollama (Mistral/Command R7B Arabic) | Uses LLM to generate an answer using the top-ranked documents as context. |
-| **9. Display response**       | Streamlit UI                 | Shows retrieved documents, scores, and final AI response. |
+| **6. Generate an AI response** | Ollama (Mistral/Command R7B Arabic) | Uses LLM to generate an answer using the top-ranked documents as context. |
+| **7. Apply content safety filters** | Azure AI Content Safety | Ensures the AI-generated response follows safety guidelines. |
+| **8. Display response**       | Streamlit UI                 | Shows retrieved documents, scores, and final AI response. |
 
 ---
 
