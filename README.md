@@ -6,13 +6,16 @@ The system integrates **Ollama, Qdrant, BM25, and embeddings**, with **multiling
 
 ---
 
+---
+
 ## 📌 **Features & Capabilities**
 ✅ **Hybrid Retrieval:** Combines **vector search (embeddings)** with **BM25 keyword matching**  
 ✅ **Multi-Language Support:** **Arabic & English queries**, using **Command R7B Arabic for Arabic** & **Mistral-7B for English**  
 ✅ **Fine-Tuned Ranking:** Uses **BM25 + embedding similarity + reranking (bge-m3)** to enhance search relevance  
 ✅ **Streamlit UI:** Interactive web interface for testing queries  
 ✅ **Language Detection:** Uses **Azure AI Container (offline)** to detect Arabic vs. English queries  
-✅ **Named Entity Recognition (NER):** Improves keyword matching using **Azure AI NER Container (offline)**  
+✅ **Content Safety Filtering:** Uses **Azure AI Content Safety** to detect and filter harmful, biased, or inappropriate content  
+✅ **Document Processing Support:** Uses **Azure Document Intelligence (Form Recognizer)** to extract text from PDFs, scanned documents, and structured forms  
 ✅ **Local Deployment:** Runs **fully offline** using **Qdrant (Docker) and Ollama**  
 
 ---
@@ -24,11 +27,12 @@ The system integrates **Ollama, Qdrant, BM25, and embeddings**, with **multiling
 | **1. User enters a query**    | Streamlit UI                 | Provides an input field for users to enter queries. |
 | **2. Detect query language**  | Azure AI Language (Offline)  | Determines whether the query is in Arabic or English. |
 | **3. Generate query embedding** | Ollama (Mistral/Command R7B Arabic) | Converts the query into a numerical vector representation. |
-| **4. Perform Named Entity Recognition (NER)** | Azure AI NER (Offline) | Extracts key entities to enhance keyword matching. |
-| **5. Retrieve relevant documents** | Qdrant (Vector DB)       | Performs a **hybrid search**: **vector similarity search** (embeddings) + **BM25 keyword match**. |
-| **6. Rank retrieved documents** | BM25 (Rank-BM25) + bge-m3  | Ranks results based on keyword relevance and vector similarity. |
-| **7. Generate AI response**   | Ollama (Mistral/Command R7B Arabic) | Uses LLM to generate an answer using the top-ranked documents as context. |
-| **8. Display response**       | Streamlit UI                 | Shows retrieved documents, scores, and final AI response. |
+| **4. Retrieve relevant documents** | Qdrant (Vector DB)       | Performs a **hybrid search**: **vector similarity search** (embeddings) + **BM25 keyword match**. |
+| **5. Rank retrieved documents** | BM25 (Rank-BM25) + bge-m3  | Ranks results based on keyword relevance and vector similarity. |
+| **6. Filter responses for safety** | Azure AI Content Safety  | Ensures retrieved content & AI responses do not contain harmful or biased content. |
+| **7. Process PDF & image documents** | Azure Document Intelligence | Extracts structured text for retrieval from PDFs, invoices, forms, and scanned documents. |
+| **8. Generate AI response**   | Ollama (Mistral/Command R7B Arabic) | Uses LLM to generate an answer using the top-ranked documents as context. |
+| **9. Display response**       | Streamlit UI                 | Shows retrieved documents, scores, and final AI response. |
 
 ---
 
@@ -69,13 +73,24 @@ ollama pull bge-m3
 ### **6️⃣ Run Azure AI Containers for Language Detection & NER**
 #### **Language Detection**
 ```bash
-docker run --rm -it -p 5000:5000 --memory 4g --cpus 1   mcr.microsoft.com/azure-cognitive-services/textanalytics/language   Eula=accept   Billing={ENDPOINT_URI}   ApiKey={API_KEY}
+docker run --rm -it --platform linux/amd64 -p 5000:5000 --memory 6g --cpus 2 \
+  mcr.microsoft.com/azure-cognitive-services/textanalytics/language \
+  Eula=accept \
+  Billing="$AZURE_LANGUAGE_BILLING_URL" \
+  ApiKey="$AZURE_LANGUAGE_API_KEY"
 ```
 
 #### **Named Entity Recognition (NER)**
 ```bash
-docker run --rm -it -p 5001:5000 --memory 8g --cpus 1   mcr.microsoft.com/azure-cognitive-services/textanalytics/ner   Eula=accept   Billing={ENDPOINT_URI}   ApiKey={API_KEY}
+docker run --rm -it --platform linux/amd64 -p 5001:5001 --memory 8g --cpus 1 \
+  mcr.microsoft.com/azure-cognitive-services/textanalytics/ner:latest \
+  Eula=accept \
+  Billing="$AZURE_NER_BILLING_URL" \
+  ApiKey="$AZURE_NER_API_KEY"
+
 ```
+
+
 
 ### **7️⃣ Prepare & Index Documents**
 Store your dataset inside the `data/` folder, then run:
@@ -87,6 +102,11 @@ This will:
 - Perform Named Entity Recognition (NER)
 - Embed documents using **Mistral-7B (4096-dim) or Command R7B Arabic (4096-dim)**
 - Store them in Qdrant for retrieval
+
+Verify if the Qdrant Collections Exist
+```
+curl -X GET "http://localhost:6333/collections"
+```
 
 ### **8️⃣ Start the Streamlit UI**
 ```bash

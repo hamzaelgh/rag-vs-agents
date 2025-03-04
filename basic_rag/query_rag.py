@@ -41,21 +41,21 @@ def detect_language(text):
     
     return "english"  # Default to English if detection fails
 
-# Function to extract entities using Azure AI NER API
-def extract_named_entities(text):
-    """Calls Azure AI NER API to extract named entities from the query."""
-    payload = {"documents": [{"id": "1", "text": text}]}
-    headers = {"Content-Type": "application/json"}
+# # Function to extract entities using Azure AI NER API
+# def extract_named_entities(text):
+#     """Calls Azure AI NER API to extract named entities from the query."""
+#     payload = {"documents": [{"id": "1", "text": text}]}
+#     headers = {"Content-Type": "application/json"}
 
-    response = requests.post(AZURE_NER_API_URL, json=payload, headers=headers)
-    response_json = response.json()
+#     response = requests.post(AZURE_NER_API_URL, json=payload, headers=headers)
+#     response_json = response.json()
 
-    entities = []
-    if "documents" in response_json and response_json["documents"]:
-        for entity in response_json["documents"][0]["entities"]:
-            entities.append(entity["text"])  # Extract entity names
+#     entities = []
+#     if "documents" in response_json and response_json["documents"]:
+#         for entity in response_json["documents"][0]["entities"]:
+#             entities.append(entity["text"])  # Extract entity names
     
-    return entities
+#     return entities
 
 # Function to generate embeddings
 def generate_embedding(text, language):
@@ -80,9 +80,9 @@ def search_documents(query, language):
         print(f"🚨 Collection '{collection_name}' not found in Qdrant. Skipping retrieval.")
         return []
 
-    # Extract named entities from query
-    named_entities = extract_named_entities(query)
-    print(f"🟢 Named Entities: {named_entities}")
+    # # Extract named entities from query
+    # named_entities = extract_named_entities(query)
+    # print(f"🟢 Named Entities: {named_entities}")
 
     retrieved_docs, keyword_docs = [], []
 
@@ -98,18 +98,18 @@ def search_documents(query, language):
     except Exception as e:
         print(f"Vector search error: {e}")
 
-    # Perform keyword search including NER-based entity matching
-    try:
-        keyword_results, _ = client.scroll(
-            collection_name=collection_name,
-            scroll_filter={"must": [{"key": "text", "match": {"value": query}}] + 
-                           [{"key": "text", "match": {"value": entity}} for entity in named_entities]},
-            limit=5,
-            with_payload=True
-        )
-        keyword_docs = [{"text": hit.payload["text"], "score": 2.0} for hit in keyword_results]
-    except Exception as e:
-        print(f"Keyword search error: {e}")
+    # # Perform keyword search including NER-based entity matching
+    # try:
+    #     keyword_results, _ = client.scroll(
+    #         collection_name=collection_name,
+    #         scroll_filter={"must": [{"key": "text", "match": {"value": query}}] + 
+    #                        [{"key": "text", "match": {"value": entity}} for entity in named_entities]},
+    #         limit=5,
+    #         with_payload=True
+    #     )
+    #     keyword_docs = [{"text": hit.payload["text"], "score": 2.0} for hit in keyword_results]
+    # except Exception as e:
+    #     print(f"Keyword search error: {e}")
 
     # Combine and rank results
     final_results = keyword_docs + retrieved_docs
