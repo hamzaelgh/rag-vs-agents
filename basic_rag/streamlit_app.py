@@ -5,7 +5,7 @@ import ollama
 # 🎨 Streamlit UI Setup
 st.set_page_config(page_title="RAG System", layout="wide")
 
-st.title("🔍 RAG System - Hybrid Search with BM25 & LLMs")
+st.title("🔍 🧠 AI-Powered RAG System: Deployable Offline, On-Premise, or Any Cloud 🚀")
 st.markdown("This system retrieves relevant documents using **vector search** (Qdrant) and **BM25 keyword matching**, then generates a response using **large language models (LLMs)**.")
 
 # ℹ️ Sidebar with Model & Retrieval Info
