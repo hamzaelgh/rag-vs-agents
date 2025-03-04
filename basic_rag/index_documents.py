@@ -16,8 +16,8 @@ client = QdrantClient("localhost", port=6333)
 
 # Correct embedding sizes for each model
 EMBEDDING_SIZES = {
-    "en": 4096,  # Mistral-7B
-    "ar": 4096,  # command-r7b-arabic:7b
+    "en": 1024,  # bge-m3 (English)
+    "ar": 1024,  # bge-m3 (Arabic)
 }
 
 # ✅ Ensure Qdrant collections exist with correct dimensions
@@ -55,13 +55,11 @@ def detect_language(text):
     return "en"  # Default to English if detection fails
 
 # Function to generate embeddings using the correct LLM
+# Use BGE-M3 for generating embeddings
 def generate_embedding(text):
-    """Generates embedding using the correct model based on detected language."""
-    lang = detect_language(text)
-    model = "command-r7b-arabic:7b" if lang == "ar" else "mistral:7b"
-
-    response = ollama.embeddings(model=model, prompt=text)
-    return response["embedding"], lang
+    """Generates high-quality embeddings using BGE-M3 for both English & Arabic."""
+    response = ollama.embeddings(model="bge-m3", prompt=text)
+    return response["embedding"]  # Only return embedding, not language
 
 # Function to chunk text
 def chunk_text(text, chunk_size=200):

@@ -4,10 +4,11 @@ This repository demonstrates how to build a **Retrieval-Augmented Generation (RA
 
 The system integrates **Ollama, Qdrant, BM25, and embeddings**, with **multilingual support (Arabic & English)** and **fine-tuned retrieval enhancements** to improve accuracy and ranking.  
 
-Additionally, **Azure AI Services** (via offline containers) enhance the system’s **language detection, document processing, content safety, and retrieval ranking**, making it robust and enterprise-ready.  
+Integrating **Azure AI Containers** enhances the **accuracy, security, and usability** of the system while keeping it **offline and on-premise compatible**.  
 
 ⚡ **This can help you build a PoC on Azure to assist a customer in deploying a RAG solution on-premise using Azure AI containers.**  
 📌 More details: [Azure AI Containers](https://learn.microsoft.com/en-us/azure/ai-services/cognitive-services-container-support)  
+
 
 ---
 
@@ -23,20 +24,41 @@ Additionally, **Azure AI Services** (via offline containers) enhance the system�
 
 ---
 
-## 🔄 **User Flow & Tool Breakdown**
+## 🏗 Enhanced User Flow with Azure AI Containers  
 
 | **Step**                     | **Tool Used**                 | **Description** |
 |------------------------------|------------------------------|----------------|
 | **1. User enters a query**    | Streamlit UI                 | Provides an input field for users to enter queries. |
-| **2. Detect query language**  | Azure AI Language (Offline)  | Determines whether the query is in Arabic or English. |
-| **3. Generate query embedding** | Ollama (Mistral/Command R7B Arabic) | Converts the query into a numerical vector representation. |
+| **2. Detect query language**  | **Azure AI Language (Offline Container)**  | Determines whether the query is in Arabic or English. |
+| **3. Generate query embedding** | Ollama (`bge-m3`) | Converts the query into a numerical vector representation. |
 | **4. Retrieve relevant documents** | Qdrant (Vector DB)       | Performs a **hybrid search**: **vector similarity search** (embeddings) + **BM25 keyword match**. |
-| **5. Rank retrieved documents** | BM25 (Rank-BM25) + bge-m3  | Ranks results based on keyword relevance and vector similarity. |
-| **6. Generate an AI response** | Ollama (Mistral/Command R7B Arabic) | Uses LLM to generate an answer using the top-ranked documents as context. |
-| **7. Apply content safety filters** | Azure AI Content Safety | Ensures the AI-generated response follows safety guidelines. |
-| **8. Display response**       | Streamlit UI                 | Shows retrieved documents, scores, and final AI response. |
+| **5. Rank retrieved documents** | BM25 (Rank-BM25) + `bge-m3`  | Ranks results based on keyword relevance and vector similarity. |
+| **6. Extract named entities (Optional)** | **Azure AI NER (Offline Container)** | Identifies key entities in the query to improve retrieval precision. |
+| **7. Apply OCR for document parsing** | **Azure Document Intelligence (Offline Container)** | Extracts text from scanned PDFs, images, or structured documents to improve knowledge base ingestion. |
+| **8. Generate an AI response** | Ollama (`Qwen/Gemma`) | Uses an **LLM to generate an answer** using the top-ranked documents as context. |
+| **9. Apply content safety filters** | **Azure AI Content Safety (Offline Container)** | Ensures the **AI-generated response follows safety guidelines**, filtering out harmful or inappropriate content. |
+| **10. Display response**       | Streamlit UI                 | Shows retrieved documents, scores, and final AI response. |
 
 ---
+
+## 🚀 How These Containers Improve the System  
+
+### ✅ **Azure AI Language Container**  
+- Ensures **accurate language detection** for Arabic & English queries.  
+- Helps select the correct **embedding model & retrieval method**.  
+
+### ✅ **Azure AI Named Entity Recognition (NER) Container (Optional)**  
+- Extracts **key entities from queries** to **enhance search precision**.  
+- Improves **retrieval for specific industry-related queries** (e.g., oil & gas terms).  
+
+### ✅ **Azure Document Intelligence Container**  
+- Enables **OCR-based text extraction** from **PDFs, scanned reports, and images**.  
+- Improves **knowledge base ingestion**, allowing **structured & unstructured** data retrieval.  
+
+### ✅ **Azure AI Content Safety Container**  
+- Ensures **AI-generated responses do not include harmful, biased, or sensitive content**.  
+- Helps meet compliance & safety standards for **enterprise use cases**.  
+
 
 ## 🛠️ **Setup & Installation**  
 
@@ -81,18 +103,6 @@ docker run --rm -it --platform linux/amd64 -p 5000:5000 --memory 6g --cpus 2 \
   Billing="$AZURE_LANGUAGE_BILLING_URL" \
   ApiKey="$AZURE_LANGUAGE_API_KEY"
 ```
-
-#### **Named Entity Recognition (NER)**
-```bash
-docker run --rm -it --platform linux/amd64 -p 5001:5001 --memory 8g --cpus 1 \
-  mcr.microsoft.com/azure-cognitive-services/textanalytics/ner:latest \
-  Eula=accept \
-  Billing="$AZURE_NER_BILLING_URL" \
-  ApiKey="$AZURE_NER_API_KEY"
-
-```
-
-
 
 ### **7️⃣ Prepare & Index Documents**
 Store your dataset inside the `data/` folder, then run:

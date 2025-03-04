@@ -14,65 +14,49 @@ nltk.download("punkt")
 # Initialize Qdrant client
 client = QdrantClient("localhost", port=6333)
 
-# Correct embedding sizes for each model
+# Embedding sizes for models
 EMBEDDING_SIZES = {
-    "english": 4096,
-    "arabic": 4096,  
+    "english": 1024,  # bge-m3 (Optimized for retrieval)
+    "arabic": 1024,   # bge-m3 (Arabic-compatible embeddings)
 }
 
-# Load API details from environment variables
+# API Endpoints
 AZURE_LANGUAGE_API_URL = "http://localhost:5000/text/analytics/v3.1/languages"
-AZURE_NER_API_URL = "http://localhost:5001/text/analytics/v3.1/entities/recognition/general"
 
-# Function to detect language using Azure AI Language API   
+# Function to detect language using Azure AI Language API
 def detect_language(text):
-    """Calls Azure AI Language API to detect the language of the text."""
+    """Detects query language using Azure AI Language API."""
     payload = {"documents": [{"id": "1", "text": text}]}
     headers = {"Content-Type": "application/json"}
 
-    response = requests.post(AZURE_LANGUAGE_API_URL, json=payload, headers=headers)
-    response_json = response.json()
+    try:
+        response = requests.post(AZURE_LANGUAGE_API_URL, json=payload, headers=headers)
+        response_json = response.json()
 
-    if "documents" in response_json and response_json["documents"]:
-        detected_lang = response_json["documents"][0]["detectedLanguage"]["iso6391Name"]  # 'ar' or 'en'
-        
-        # Map 'ar' to 'arabic' and 'en' to 'english'
-        return "arabic" if detected_lang == "ar" else "english"
-    
+        if "documents" in response_json and response_json["documents"]:
+            detected_lang = response_json["documents"][0]["detectedLanguage"]["iso6391Name"]
+            return "arabic" if detected_lang == "ar" else "english"
+
+    except Exception as e:
+        print(f"⚠️ Language detection error: {e}")
+
     return "english"  # Default to English if detection fails
-
-# # Function to extract entities using Azure AI NER API
-# def extract_named_entities(text):
-#     """Calls Azure AI NER API to extract named entities from the query."""
-#     payload = {"documents": [{"id": "1", "text": text}]}
-#     headers = {"Content-Type": "application/json"}
-
-#     response = requests.post(AZURE_NER_API_URL, json=payload, headers=headers)
-#     response_json = response.json()
-
-#     entities = []
-#     if "documents" in response_json and response_json["documents"]:
-#         for entity in response_json["documents"][0]["entities"]:
-#             entities.append(entity["text"])  # Extract entity names
-    
-#     return entities
 
 # Function to generate embeddings
 def generate_embedding(text, language):
-    """Generates embedding using the correct model based on detected language."""
-    model = "command-r7b-arabic:7b" if language == "arabic" else "mistral:7b"
-    response = ollama.embeddings(model=model, prompt=text)
-    return response["embedding"]
+    """Generates optimized embeddings using BGE-M3 for both Arabic & English."""
+    response = ollama.embeddings(model="bge-m3", prompt=text)
+    return response["embedding"], language
 
 # Function to tokenize text for BM25
 def tokenize(text):
+    """Tokenizes input text for BM25 retrieval."""
     return [word.lower() for word in word_tokenize(text) if word not in string.punctuation]
 
-# Function to search documents using vector search, keyword matching, and NER-based lookup
-# Enhance search accuracy by combining vector search, BM25, and entity matching.
+# Function to search documents with optimized retrieval
 def search_documents(query, language):
-    """Retrieves documents using vector search, keyword matching, and NER-based lookup."""
-    query_vector = generate_embedding(query, language)
+    """Retrieves documents using vector search & BM25 keyword matching."""
+    query_vector, _ = generate_embedding(query, language)
     collection_name = "rag_docs_ar" if language == "arabic" else "rag_docs_en"
 
     # Ensure Qdrant collection exists
@@ -80,11 +64,7 @@ def search_documents(query, language):
         print(f"🚨 Collection '{collection_name}' not found in Qdrant. Skipping retrieval.")
         return []
 
-    # # Extract named entities from query
-    # named_entities = extract_named_entities(query)
-    # print(f"🟢 Named Entities: {named_entities}")
-
-    retrieved_docs, keyword_docs = [], []
+    retrieved_docs = []
 
     # Perform vector search in Qdrant
     try:
@@ -96,59 +76,55 @@ def search_documents(query, language):
         )
         retrieved_docs = [{"text": hit.payload["text"], "score": hit.score} for hit in vector_results] if vector_results else []
     except Exception as e:
-        print(f"Vector search error: {e}")
+        print(f"⚠️ Vector search error: {e}")
 
-    # # Perform keyword search including NER-based entity matching
-    # try:
-    #     keyword_results, _ = client.scroll(
-    #         collection_name=collection_name,
-    #         scroll_filter={"must": [{"key": "text", "match": {"value": query}}] + 
-    #                        [{"key": "text", "match": {"value": entity}} for entity in named_entities]},
-    #         limit=5,
-    #         with_payload=True
-    #     )
-    #     keyword_docs = [{"text": hit.payload["text"], "score": 2.0} for hit in keyword_results]
-    # except Exception as e:
-    #     print(f"Keyword search error: {e}")
+    # BM25 Keyword Search Optimization for English
+    if language == "english":
+        try:
+            corpus = [doc["text"] for doc in retrieved_docs]
+            tokenized_corpus = [tokenize(doc) for doc in corpus]
+            bm25 = BM25Okapi(tokenized_corpus)
+            query_tokens = tokenize(query)
+            bm25_scores = bm25.get_scores(query_tokens)
 
-    # Combine and rank results
-    final_results = keyword_docs + retrieved_docs
-    final_results = sorted(final_results, key=lambda x: x["score"], reverse=True)
+            # Merge & rank results
+            for idx, doc in enumerate(retrieved_docs):
+                doc["bm25_score"] = bm25_scores[idx]
 
-    return final_results[:5]  # Return top 5 results
+            retrieved_docs = sorted(retrieved_docs, key=lambda x: x["bm25_score"] + x["score"], reverse=True)
+        except Exception as e:
+            print(f"⚠️ BM25 search error: {e}")
+
+    return retrieved_docs[:5]  # Return top 5 ranked documents
 
 # Function to re-rank retrieved documents
 def rerank_documents(query, retrieved_docs):
+    """Re-ranks retrieved documents using similarity scores from BGE-M3 embeddings."""
     if not retrieved_docs:
         return ["No relevant documents found."]
+
+    texts = [doc["text"] for doc in retrieved_docs]
     
-    # If retrieved_docs is already a list of strings, use it directly
-    if isinstance(retrieved_docs[0], str):
-        texts = retrieved_docs
-    else:
-        # Otherwise extract the text field from each document
-        texts = [doc["text"] for doc in retrieved_docs]
-    
-    # Get similarity scores using `bge-m3` in Ollama
     try:
         query_embedding = ollama.embeddings(model="bge-m3", prompt=query)["embedding"]
         doc_embeddings = [ollama.embeddings(model="bge-m3", prompt=text)["embedding"] for text in texts]
-        
+
         # Compute similarity scores
         scores = [np.dot(doc_embedding, query_embedding) for doc_embedding in doc_embeddings]
-        
+
         # Sort documents by highest similarity score
         ranked_docs = sorted(zip(texts, scores), key=lambda x: x[1], reverse=True)
-        
+
         return [doc[0] for doc in ranked_docs[:2]]  # Return top 2 ranked documents
     except Exception as e:
-        print(f"Reranking error: {e}")
+        print(f"⚠️ Reranking error: {e}")
         return texts[:2]  # If reranking fails, return first 2 docs
 
-# Function to generate an LLM response
+# Function to generate AI response
 def generate_response(query):
+    """Generates an AI response using the retrieved context."""
     language = detect_language(query)
-    llm_model = "command-r7b-arabic:7b" if language == "arabic" else "mistral:7b"
+    llm_model = "gemma2:2b" if language == "arabic" else "qwen2.5:0.5b"
 
     retrieved_docs = search_documents(query, language)
     reranked_docs = rerank_documents(query, retrieved_docs)

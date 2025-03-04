@@ -15,8 +15,8 @@ with st.sidebar:
     - **Retrieval Method**: Hybrid (Vector Search + BM25)
     - **Vector Database**: [Qdrant](https://qdrant.tech/)
     - **Embedding Models**:
-      - `Mistral-7B` for English (Ollama)
-      - `Command-R7B-Arabic:7B` for Arabic (Ollama)
+      - `qwen2.5:0.5b` for English (Ollama)
+      - `gemma2:2b` for Arabic (Ollama)
     - **Reranking**: [BGE-M3](https://huggingface.co/BAAI/bge-m3) for relevance tuning
     """)
 
@@ -55,11 +55,10 @@ if st.button("🔎 Search"):
         # 📌 Additional Debug Info (Expandable)
         with st.expander("📊 Debug Info: Retrieval & Model Selection"):
             st.markdown(f"""
-            - **Selected Model**: `{ "Command-R7B-Arabic:7B" if language == "arabic" else "Mistral-7B" }`
+            - **Selected Model**: `{ "gemma2:2b" if language == "arabic" else "qwen2.5:0.5b" }`
             - **Documents Retrieved**: `{len(retrieved_docs)}` 
             - **BM25 Ranking Applied**: `✅ Yes`
             - **Vector Search**: `✅ Yes`
             """)
-
     else:
         st.warning("⚠️ Please enter a query!")
