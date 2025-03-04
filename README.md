@@ -147,13 +147,12 @@ Our current implementation mitigates these issues with:
 - Re-ranking (bge-m3)
 - Named Entity Recognition (NER)
 - LLM Context Expansion
----
 
-## 🚀 **Future Improvements**
+### **4️⃣ Future Improvements
 🟢 **Experiment with specialized Arabic embedding models** (e.g., Arabic-trained versions of BGE or MARBERT).  
 🟢 **Optimize BM25 weights for Arabic vs. English separately** to fine-tune ranking balance.  
 🟢 **Extend Named Entity Recognition (NER) to improve keyword-based lookup**.  
-🟢 **Benchmark different Arabic language models for better retrieval performance**.  
+🟢 **Benchmark different Arabic language models for better retrieval performance**.
 
 ---
 
