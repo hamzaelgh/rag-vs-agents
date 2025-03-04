@@ -46,17 +46,6 @@ Integrating **Azure AI Containers** enhances the **accuracy, security, and usabi
 ### ✅ **Azure AI Content Safety Container**  
 - Ensures **AI-generated responses do not include harmful, biased, or sensitive content**.  
 - Helps meet compliance & safety standards for **enterprise use cases**.  
----
-
-## 📌 **Features & Capabilities**
-✅ **Hybrid Retrieval:** Combines **vector search (embeddings)** with **BM25 keyword matching**  
-✅ **Multi-Language Support:** **Arabic & English queries**, using **Command R7B Arabic for Arabic** & **Mistral-7B for English**  
-✅ **Fine-Tuned Ranking:** Uses **BM25 + embedding similarity + reranking (bge-m3)** to enhance search relevance  
-✅ **Streamlit UI:** Interactive web interface for testing queries  
-✅ **Language Detection:** Uses **Azure AI Container (offline)** to detect Arabic vs. English queries  
-✅ **Document Intelligence:** Uses **Azure AI Document Intelligence (offline)** for document preprocessing & OCR  
-✅ **Content Moderation:** Uses **Azure AI Content Safety (offline)** to filter inappropriate content  
-✅ **Local Deployment:** Runs **fully offline** using **Qdrant (Docker) and Ollama**  
 
 ---
 ## 🛠️ **Setup & Installation**  
