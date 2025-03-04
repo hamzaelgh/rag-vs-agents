@@ -1,10 +1,13 @@
 # 🧠 AI-Powered RAG System: Deployable Offline, On-Premise, or Any Cloud 🚀  
 
-This repository demonstrates how to build a **Retrieval-Augmented Generation (RAG) system** that is **cloud-agnostic, fully deployable offline, on-premise, or on any cloud** without relying on managed cloud services.  
+This repository demonstrates how to build a **Retrieval-Augmented Generation (RAG) system** that is **cloud-agnostic, fully deployable offline, on-premise, or on any cloud**.
 
 The system integrates **Ollama, Qdrant, BM25, and embeddings**, with **multilingual support (Arabic & English)** and **fine-tuned retrieval enhancements** to improve accuracy and ranking.  
 
 Additionally, **Azure AI Services** (via offline containers) enhance the system’s **language detection, document processing, content safety, and retrieval ranking**, making it robust and enterprise-ready.  
+
+⚡ **This can help you build a PoC on Azure to assist a customer in deploying a RAG solution on-premise using Azure AI containers.**  
+📌 More details: [Azure AI Containers](https://learn.microsoft.com/en-us/azure/ai-services/cognitive-services-container-support)  
 
 ---
 
