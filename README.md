@@ -97,11 +97,6 @@ Store your dataset inside the `data/` folder, then run:
 ```bash
 python basic_rag/index_documents.py
 ```
-This will:
-- Detect language (Arabic/English)
-- Perform Named Entity Recognition (NER)
-- Embed documents using **Mistral-7B (4096-dim) or Command R7B Arabic (4096-dim)**
-- Store them in Qdrant for retrieval
 
 Verify if the Qdrant Collections Exist
 ```
@@ -124,7 +119,7 @@ The system will:
 2. **Perform Named Entity Recognition (NER)**
 3. **Retrieve relevant documents from Qdrant**
 4. **Rank results using BM25 + embedding similarity + reranking**
-5. **Generate an AI response using Ollama (Mistral/Command R7B Arabic)**
+5. **Generate an AI response using Ollama**
 
 ---
 
